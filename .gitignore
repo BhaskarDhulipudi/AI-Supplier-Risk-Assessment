@@ -1,0 +1,8 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+users.json
+vector_store.json
+supplier_risk_app/uploads/

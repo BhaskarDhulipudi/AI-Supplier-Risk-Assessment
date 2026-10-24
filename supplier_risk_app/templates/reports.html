@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Reports | Supplier Risk{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block page_subtitle %}Review supplier risk summaries calculated from the current CSV dataset.{% endblock %}
+{% block content %}
+<div class="section-grid" style="grid-template-columns: 1fr;">
+  <section class="panel">
+    <div class="panel-row">
+      <div>
+        <p class="panel-title">Highest-Risk Supplier Summaries</p>
+        <p id="reports-count" role="status" aria-live="polite">Loading supplier risk summaries...</p>
+      </div>
+      <button class="button secondary" onclick="window.location.href='/suppliers'">View Suppliers</button>
+    </div>
+    <p>These are calculated from the supplier dataset; individual generated reports are not stored.</p>
+    <div style="overflow-x:auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Supplier ID</th>
+            <th>Supplier</th>
+            <th>Financial</th>
+            <th>Product</th>
+            <th>Quality</th>
+            <th>Overall</th>
+            <th>Risk Reason</th>
+            <th>Recommended Action</th>
+          </tr>
+        </thead>
+        <tbody id="reports-body"><tr><td colspan="8">Loading supplier risk summaries...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+  const body = document.getElementById('reports-body');
+  const count = document.getElementById('reports-count');
+
+  function addCell(row, value, level) {
+    const cell = document.createElement('td');
+    if (level) {
+      const badge = document.createElement('span');
+      const normalized = level.toLowerCase();
+      const tone = normalized === 'critical' || normalized === 'high'
+        ? 'high'
+        : normalized === 'medium' ? 'medium' : 'low';
+      badge.className = `tag ${tone}`;
+      badge.textContent = value;
+      cell.appendChild(badge);
+    } else {
+      cell.textContent = value ?? '';
+    }
+    row.appendChild(cell);
+  }
+
+  function renderReports(reports) {
+    count.textContent = `${reports.length} highest-risk suppliers from the dataset`;
+    body.replaceChildren();
+    if (!reports.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 8;
+      cell.textContent = 'No supplier risk summaries are available.';
+      row.appendChild(cell);
+      body.appendChild(row);
+      return;
+    }
+
+    reports.forEach(report => {
+      const row = document.createElement('tr');
+      const overallLevel = report.overall_risk_level || report.risk_level || 'Unknown';
+      addCell(row, report.supplier_id || '—');
+      addCell(row, report.supplier || 'Unknown Supplier');
+      addCell(row, report.financial_risk_score ?? '—', report.financial_risk_level || '');
+      addCell(row, report.product_risk_score ?? '—', report.product_risk_level || '');
+      addCell(row, report.quality_risk_score ?? '—', report.quality_risk_level || '');
+      addCell(row, report.overall_risk_score ?? report.risk_score ?? '—', overallLevel);
+      addCell(row, report.risk_reason || 'No risk reason provided');
+      addCell(row, report.recommended_action || 'Review');
+      body.appendChild(row);
+    });
+  }
+
+  fetch('/api/reports').then(async response => {
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (!Array.isArray(data.reports)) throw new Error('Risk summary data has an unexpected format.');
+    renderReports(data.reports);
+  }).catch(error => {
+    count.textContent = `Could not load risk summaries: ${error.message}`;
+    body.replaceChildren();
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 8;
+    cell.textContent = 'Risk summary data is unavailable. Please try again later.';
+    row.appendChild(cell);
+    body.appendChild(row);
+  });
+})();
+</script>
+{% endblock %}

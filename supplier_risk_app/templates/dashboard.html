@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Supplier Risk{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Supplier risk overview based on the current dataset.{% endblock %}
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <h3>Total Suppliers</h3>
+    <div class="stat-value" id="total-suppliers">—</div>
+    <div class="stat-meta">Current dataset total</div>
+  </div>
+  <div class="stat-card">
+    <h3>Financial Risk</h3>
+    <div class="stat-value" id="financial-risk-score">—</div>
+    <div class="stat-meta" id="financial-risk-level">Avg score</div>
+  </div>
+  <div class="stat-card">
+    <h3>Product Risk</h3>
+    <div class="stat-value" id="product-risk-score">—</div>
+    <div class="stat-meta" id="product-risk-level">Avg score</div>
+  </div>
+  <div class="stat-card">
+    <h3>Quality Risk</h3>
+    <div class="stat-value" id="quality-risk-score">—</div>
+    <div class="stat-meta" id="quality-risk-level">Avg score</div>
+  </div>
+  <div class="stat-card">
+    <h3>Overall Risk</h3>
+    <div class="stat-value" id="overall-risk-score">—</div>
+    <div class="stat-meta" id="overall-risk-level">Avg score</div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <h3>Risk Distribution</h3>
+    <div class="chart-body">
+      <div class="donut" id="risk-donut" title="Share of suppliers rated low risk">0%</div>
+      <div class="legend">
+        <div class="legend-item"><span style="display:flex;align-items:center;"><span class="legend-dot" style="background:#ef4444"></span>High / Critical Risk</span><strong id="high-risk-percent">0%</strong></div>
+        <div class="legend-item"><span style="display:flex;align-items:center;"><span class="legend-dot" style="background:#f59e0b"></span>Medium Risk</span><strong id="medium-risk-percent">0%</strong></div>
+        <div class="legend-item"><span style="display:flex;align-items:center;"><span class="legend-dot" style="background:#16a34a"></span>Low Risk</span><strong id="low-risk-percent">0%</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>Risk Overview</h3>
+    <div class="trend-chart" id="risk-overview">Loading dataset...</div>
+  </div>
+</div>
+
+<div class="section-grid">
+  <section class="panel">
+    <div class="panel-row">
+      <div>
+        <p class="panel-title">Highest-Risk Suppliers</p>
+        <p>Top suppliers ranked by calculated overall risk score.</p>
+      </div>
+      <button class="button secondary" onclick="window.location.href='/suppliers'">View All Suppliers</button>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Supplier Name</th>
+          <th>Overall Risk</th>
+          <th>Risk Score</th>
+          <th>Risk Reason</th>
+          <th>Recommended Action</th>
+        </tr>
+      </thead>
+      <tbody id="recent-assessments-body"></tbody>
+    </table>
+  </section>
+</div>
+
+<script>
+function tagClass(level){
+  const v=(level||'').toLowerCase();
+  if (v==='critical'||v==='high') return 'high';
+  if (v==='medium') return 'medium';
+  return 'low';
+}
+
+function average(values){
+  const nums = values.map(v => Number(v)).filter(v => Number.isFinite(v));
+  if (!nums.length) return 0;
+  return Math.round(nums.reduce((sum, v) => sum + v, 0) / nums.length);
+}
+
+function appendCell(row, text, className){
+  const cell=document.createElement('td');
+  if(className){
+    const tag=document.createElement('span');
+    tag.className=className;
+    tag.textContent=text;
+    cell.appendChild(tag);
+  }else{
+    cell.textContent=text;
+  }
+  row.appendChild(cell);
+}
+
+fetch('/api/suppliers').then(async r=>{
+  const data=await r.json();
+  if(!r.ok) throw new Error(data.error||`HTTP ${r.status}`);
+  return data;
+}).then(d=>{
+  const rows=d.suppliers||[];
+  const total = rows.length;
+  const high = rows.filter(x=>['High','Critical'].includes(x.Overall_Risk_Level || x.Risk_Level)).length;
+  const medium = rows.filter(x=>(x.Overall_Risk_Level || x.Risk_Level)==='Medium').length;
+  const low = rows.filter(x=>(x.Overall_Risk_Level || x.Risk_Level)==='Low').length;
+
+  document.getElementById('total-suppliers').textContent = rows.length;
+
+  const financialScore = average(rows.map(r => r.Financial_Risk_Score));
+  const productScore = average(rows.map(r => r.Product_Risk_Score));
+  const qualityScore = average(rows.map(r => r.Quality_Risk_Score));
+  const overallScore = average(rows.map(r => r.Overall_Risk_Score));
+
+  const scoreFields = [
+    ['financial-risk-score', financialScore, 'financial-risk-level'],
+    ['product-risk-score', productScore, 'product-risk-level'],
+    ['quality-risk-score', qualityScore, 'quality-risk-level'],
+    ['overall-risk-score', overallScore, 'overall-risk-level']
+  ];
+
+  scoreFields.forEach(([scoreId, score, labelId]) => {
+    const scoreEl = document.getElementById(scoreId);
+    const labelEl = document.getElementById(labelId);
+    if (!scoreEl || !labelEl) return;
+    scoreEl.textContent = `${score}`;
+    labelEl.textContent = score >= 75 ? 'Critical' : score >= 55 ? 'High' : score >= 35 ? 'Medium' : 'Low';
+    labelEl.style.color = score >= 75 ? '#b91c1c' : score >= 55 ? '#ef4444' : score >= 35 ? '#f59e0b' : '#16a34a';
+  });
+
+  const highPct = total ? ((high / total) * 100).toFixed(0) : '0';
+  const mediumPct = total ? ((medium / total) * 100).toFixed(0) : '0';
+  const lowPct = total ? ((low / total) * 100).toFixed(0) : '0';
+
+  document.getElementById('high-risk-percent').textContent = `${highPct}%`;
+  document.getElementById('medium-risk-percent').textContent = `${mediumPct}%`;
+  document.getElementById('low-risk-percent').textContent = `${lowPct}%`;
+  document.getElementById('risk-donut').textContent = `${lowPct}%`;
+  document.getElementById('risk-donut').style.background = `conic-gradient(#ef4444 0 ${highPct}%, #f59e0b ${highPct}% ${Number(highPct)+Number(mediumPct)}%, #16a34a ${Number(highPct)+Number(mediumPct)}% 100%)`;
+  document.getElementById('risk-overview').textContent = `High: ${highPct}% | Medium: ${mediumPct}% | Low: ${lowPct}%`;
+
+  const recent = [...rows].sort((a,b)=>(Number(b.Overall_Risk_Score)||0) - (Number(a.Overall_Risk_Score)||0)).slice(0,5);
+  const body = document.getElementById('recent-assessments-body');
+  body.replaceChildren();
+  if(!recent.length){
+    const row=document.createElement('tr');
+    const cell=document.createElement('td');
+    cell.colSpan=5;
+    cell.textContent='No supplier data is available.';
+    row.appendChild(cell);
+    body.appendChild(row);
+    return;
+  }
+  recent.forEach(s=>{
+    const row=document.createElement('tr');
+    const level=s.Overall_Risk_Level||s.Risk_Level||'Unknown';
+    appendCell(row,s.Supplier_Name||'Unknown');
+    appendCell(row,level,`tag ${tagClass(level)}`);
+    appendCell(row,s.Overall_Risk_Score??'—');
+    appendCell(row,s.Risk_Reason||'No risk reason provided');
+    appendCell(row,s.Recommended_Action||'Review');
+    body.appendChild(row);
+  });
+}).catch(()=>{
+  document.getElementById('total-suppliers').textContent = 'Unavailable';
+  document.getElementById('financial-risk-score').textContent = '—';
+  document.getElementById('product-risk-score').textContent = '—';
+  document.getElementById('quality-risk-score').textContent = '—';
+  document.getElementById('overall-risk-score').textContent = '—';
+  document.getElementById('risk-overview').textContent = 'Unable to load supplier data.';
+  document.getElementById('recent-assessments-body').innerHTML = '<tr><td colspan="5">Unable to load supplier data.</td></tr>';
+});
+</script>
+{% endblock %}

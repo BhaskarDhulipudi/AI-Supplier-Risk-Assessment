@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Suppliers | Supplier Risk{% endblock %}
+{% block page_title %}Suppliers{% endblock %}
+{% block page_subtitle %}Search, filter, and review suppliers from the project's structured dataset.{% endblock %}
+{% block content %}
+<div class="section-grid" style="grid-template-columns: 1fr;">
+  <section class="panel">
+    <div class="panel-row">
+      <div>
+        <p class="panel-title">Supplier Directory</p>
+        <p id="supplier-count" role="status" aria-live="polite">Loading suppliers...</p>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px;">
+      <label for="supplier-search" style="flex:1; min-width:220px;">Search suppliers
+        <input id="supplier-search" type="search" placeholder="Name, ID, industry, or country" style="width:100%; margin-top:6px;">
+      </label>
+      <label for="risk-filter" style="min-width:180px;">Risk level
+        <select id="risk-filter" style="width:100%; margin-top:6px; padding:12px; border:1px solid #cbd5e1; border-radius:12px;">
+          <option value="">All risk levels</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </label>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="table">
+        <thead><tr><th>ID</th><th>Supplier</th><th>Industry</th><th>Country</th><th>Risk Score</th><th>Risk Level</th><th>Action</th></tr></thead>
+        <tbody id="supplier-body"><tr><td colspan="7">Loading supplier records...</td></tr></tbody>
+      </table>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:16px;">
+      <button id="previous-page" class="button secondary small" type="button" disabled>Previous</button>
+      <span id="page-status" aria-live="polite">Page 1</span>
+      <button id="next-page" class="button secondary small" type="button" disabled>Next</button>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+  const pageSize = 25;
+  const count = document.getElementById('supplier-count');
+  const body = document.getElementById('supplier-body');
+  const search = document.getElementById('supplier-search');
+  const riskFilter = document.getElementById('risk-filter');
+  const previous = document.getElementById('previous-page');
+  const next = document.getElementById('next-page');
+  const pageStatus = document.getElementById('page-status');
+  let suppliers = [];
+  let currentPage = 1;
+
+  function tagClass(level) {
+    const normalized = (level || '').toLowerCase();
+    if (normalized === 'critical' || normalized === 'high') return 'high';
+    if (normalized === 'medium') return 'medium';
+    return 'low';
+  }
+
+  function addCell(row, value, className) {
+    const cell = document.createElement('td');
+    if (className) {
+      const badge = document.createElement('span');
+      badge.className = className;
+      badge.textContent = value;
+      cell.appendChild(badge);
+    } else {
+      cell.textContent = value ?? '';
+    }
+    row.appendChild(cell);
+  }
+
+  function renderSuppliers() {
+    const term = search.value.trim().toLowerCase();
+    const selectedRisk = riskFilter.value;
+    const filtered = suppliers.filter(supplier => {
+      const searchable = [
+        supplier.Supplier_ID,
+        supplier.Supplier_Name,
+        supplier.Industry,
+        supplier.Country
+      ].join(' ').toLowerCase();
+      const risk = supplier.Overall_Risk_Level || supplier.Risk_Level || '';
+      return (!term || searchable.includes(term)) && (!selectedRisk || risk === selectedRisk);
+    });
+    const pageCount = Math.ceil(filtered.length / pageSize);
+    currentPage = Math.min(currentPage, Math.max(pageCount, 1));
+    const start = (currentPage - 1) * pageSize;
+    const pageRows = filtered.slice(start, start + pageSize);
+
+    count.textContent = `${filtered.length} of ${suppliers.length} suppliers`;
+    pageStatus.textContent = `Page ${currentPage} of ${Math.max(pageCount, 1)}`;
+    previous.disabled = currentPage <= 1 || pageCount === 0;
+    next.disabled = currentPage >= pageCount;
+    body.replaceChildren();
+
+    if (!pageRows.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 7;
+      cell.textContent = suppliers.length ? 'No suppliers match these filters.' : 'No supplier records are available.';
+      row.appendChild(cell);
+      body.appendChild(row);
+      return;
+    }
+
+    pageRows.forEach(supplier => {
+      const row = document.createElement('tr');
+      const risk = supplier.Overall_Risk_Level || supplier.Risk_Level || 'Unknown';
+      addCell(row, supplier.Supplier_ID);
+      addCell(row, supplier.Supplier_Name);
+      addCell(row, supplier.Industry);
+      addCell(row, supplier.Country);
+      addCell(row, supplier.Overall_Risk_Score ?? '—');
+      addCell(row, risk, `tag ${tagClass(risk)}`);
+      addCell(row, supplier.Recommended_Action || 'Review');
+      body.appendChild(row);
+    });
+  }
+
+  search.addEventListener('input', () => {
+    currentPage = 1;
+    renderSuppliers();
+  });
+  riskFilter.addEventListener('change', () => {
+    currentPage = 1;
+    renderSuppliers();
+  });
+  previous.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage -= 1;
+      renderSuppliers();
+    }
+  });
+  next.addEventListener('click', () => {
+    currentPage += 1;
+    renderSuppliers();
+  });
+
+  fetch('/api/suppliers').then(async response => {
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (!Array.isArray(data.suppliers)) throw new Error('Supplier data has an unexpected format.');
+    suppliers = data.suppliers;
+    renderSuppliers();
+  }).catch(error => {
+    count.textContent = `Could not load supplier dataset: ${error.message}`;
+    body.replaceChildren();
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 7;
+    cell.textContent = 'Supplier data is unavailable. Please try again later.';
+    row.appendChild(cell);
+    body.appendChild(row);
+  });
+})();
+</script>
+{% endblock %}

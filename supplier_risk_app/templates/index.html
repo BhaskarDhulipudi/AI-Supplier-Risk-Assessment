@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Supplier Risk Assessment</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef2f8;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #4f46e5;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --border: #d1d5db;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+      font-size: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+    .app-shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+    .sidebar { background: #111827; color: #f9fafb; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #4f46e5); display: grid; place-items: center; font-weight: 700; color: white; }
+    .brand-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.03em; }
+    .nav-links { display: grid; gap: 10px; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; color: #d1d5db; text-decoration: none; cursor: pointer; }
+    .nav-link.active, .nav-link:hover { background: rgba(79, 70, 229, 0.12); color: #f8fafc; }
+    .nav-link span { font-size: 0.95rem; }
+    .main { padding: 24px; }
+    .topbar { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+    .page-title { margin: 0; font-size: 1.75rem; font-weight: 700; }
+    .searchbar { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 10px 16px; min-width: 330px; }
+    .searchbar input { border: none; outline: none; width: 100%; background: transparent; font-size: 0.95rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border-radius: 24px; padding: 22px; box-shadow: var(--shadow); border: 1px solid rgba(148, 163, 184, 0.18); }
+    .stat-card h3 { margin: 0 0 10px; font-size: 0.95rem; color: var(--muted); letter-spacing: 0.02em; }
+    .stat-card .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .stat-card .stat-meta { color: var(--success); font-size: 0.92rem; }
+    .section-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    .panel { background: var(--surface); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(148, 163, 184, 0.18); }
+    .panel h2 { margin-top: 0; font-size: 1.1rem; }
+    .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 24px; margin-bottom: 24px; }
+    .chart-card { background: var(--surface); border-radius: 24px; padding: 22px; border: 1px solid rgba(148, 163, 184, 0.18); box-shadow: var(--shadow); }
+    .chart-card h3 { margin: 0 0 12px; font-size: 1rem; }
+    .chart-body { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    .donut { width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#dc2626 0 21%, #f59e0b 21% 57%, #16a34a 57% 100%); display: grid; place-items: center; color: white; font-weight: 700; }
+    .legend { display: grid; gap: 10px; width: min(100%, 220px); }
+    .legend-item { display: flex; justify-content: space-between; gap: 8px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+    .trend-chart { min-height: 192px; border-radius: 20px; background: linear-gradient(180deg, rgba(79, 70, 229, 0.12), rgba(79, 70, 229, 0.04)); display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+    .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 20px; }
+    .action-card { background: var(--surface-2); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(148, 163, 184, 0.16); cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease; }
+    .action-card:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08); }
+    .action-card strong { font-size: 1rem; }
+    .panel .panel-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .panel .tag { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; font-size: 0.88rem; font-weight: 600; }
+    .tag.high { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
+    .tag.medium { background: rgba(245, 158, 11, 0.12); color: var(--warning); }
+    .tag.low { background: rgba(16, 185, 129, 0.12); color: var(--success); }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { text-align: left; padding: 14px 12px; border-bottom: 1px solid #e5e7eb; }
+    .table th { color: var(--muted); font-size: 0.9rem; }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border: none; border-radius: 14px; cursor: pointer; font-weight: 600; }
+    .button.primary { background: var(--primary); color: white; }
+    .button.secondary { background: var(--surface-2); color: var(--text); }
+    .risk-assistant { display: grid; gap: 18px; }
+    .assistant-panel { display: grid; gap: 18px; }
+    .assistant-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .assistant-header h2 { margin: 0; font-size: 1.35rem; }
+    .assistant-header p { margin: 6px 0 0; color: var(--muted); }
+    .assistant-icon { width: 48px; height: 48px; border-radius: 18px; display: grid; place-items: center; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 1.5rem; }
+    .assistant-form { display: grid; gap: 16px; }
+    .assistant-form input,
+    .assistant-form textarea,
+    .assistant-form .file-input {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 18px;
+      padding: 16px 18px;
+      font-size: 1rem;
+      background: #f8fafc;
+      color: var(--text);
+    }
+    .assistant-form input {
+      height: 48px;
+    }
+    .assistant-form textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+    .assistant-form .file-input {
+      padding: 14px;
+      background: #ffffff;
+      border-radius: 16px;
+    }
+    .assistant-form button {
+      width: 100%;
+      border: none;
+      border-radius: 18px;
+      padding: 16px;
+      background: var(--primary);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 18px 32px rgba(79, 70, 229, 0.15);
+    }
+    .assistant-form button:hover {
+      opacity: 0.98;
+    }
+    .assistant-result { display: grid; gap: 12px; }
+    .assistant-result h3 { margin: 0; }
+    .assistant-result .result-row { font-size: 0.95rem; color: var(--muted); }
+    .assistant-result .result-row strong { color: var(--text); }
+    .assistant-result ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .assistant-result li { background: #f8fafc; padding: 14px; border-radius: 16px; border: 1px solid #e2e8f0; }
+    .evidence-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .evidence-list li { background: #f8fafc; padding: 14px; border-radius: 16px; border: 1px solid #e2e8f0; }
+    .footer { margin-top: 24px; color: var(--muted); font-size: 0.92rem; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">AI</div>
+        <div>
+          <div class="brand-title">Supplier Risk</div>
+          <div style="font-size:0.82rem;color:#9ca3af;">Assessment</div>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a class="nav-link active"><span>Dashboard</span></a>
+        <a class="nav-link"><span>Upload Documents</span></a>
+        <a class="nav-link"><span>Suppliers</span></a>
+        <a class="nav-link"><span>AI Risk Assistant</span></a>
+        <a class="nav-link"><span>Reports</span></a>
+        <a class="nav-link"><span>Settings</span></a>
+      </nav>
+      <div style="margin-top:auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
+        <div style="font-size:0.95rem; color:#d1d5db;">Admin User</div>
+        <div style="font-size:0.82rem; color:#9ca3af;">admin@example.com</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <p style="margin:0; color: var(--muted);">Welcome back, Admin! Here’s what’s happening today.</p>
+          <h1 class="page-title">Dashboard</h1>
+        </div>
+        <div class="searchbar">
+          <span>🔍</span>
+          <input type="search" placeholder="Search suppliers...">
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Suppliers</h3>
+          <div class="stat-value">28</div>
+          <div class="stat-meta">+4 this month</div>
+        </div>
+        <div class="stat-card">
+          <h3>High Risk Suppliers</h3>
+          <div class="stat-value" style="color: var(--danger);">6</div>
+          <div class="stat-meta" style="color: var(--danger);">+1 this month</div>
+        </div>
+        <div class="stat-card">
+          <h3>Medium Risk Suppliers</h3>
+          <div class="stat-value" style="color: var(--warning);">10</div>
+          <div class="stat-meta" style="color: var(--warning);">+2 this month</div>
+        </div>
+        <div class="stat-card">
+          <h3>Low Risk Suppliers</h3>
+          <div class="stat-value" style="color: var(--success);">12</div>
+          <div class="stat-meta" style="color: var(--success);">+7 this month</div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3>Risk Distribution</h3>
+              <p style="margin: 4px 0 0; color: var(--muted);">Current split of supplier risk categories.</p>
+            </div>
+          </div>
+          <div class="chart-body">
+            <div class="donut">43%</div>
+            <div class="legend">
+              <div class="legend-item"><span class="legend-dot" style="background:#dc2626"></span><span>High Risk</span><strong>21%</strong></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span><span>Medium Risk</span><strong>36%</strong></div>
+              <div class="legend-item"><span class="legend-dot" style="background:#16a34a"></span><span>Low Risk</span><strong>43%</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3>Risk Trend (This Month)</h3>
+              <p style="margin: 4px 0 0; color: var(--muted);">Supplier risk movement over the last 30 days.</p>
+            </div>
+          </div>
+          <div class="trend-chart">Trend chart placeholder</div>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <section class="panel">
+          <div class="panel-row">
+            <div>
+              <h2>Recent Supplier Assessments</h2>
+              <p style="margin:0;color:var(--muted);">Latest risk summaries from supplier documents.</p>
+            </div>
+            <button class="button secondary">View All Suppliers</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Supplier Name</th>
+                <th>Overall Risk</th>
+                <th>Risk Score</th>
+                <th>Top Risk</th>
+                <th>Last Assessed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>ABC Pvt Ltd</td><td><span class="tag high">High</span></td><td>82/100</td><td>Financial Risk</td><td>03 May 2025</td></tr>
+              <tr><td>XYZ Industries</td><td><span class="tag medium">Medium</span></td><td>61/100</td><td>Operational Risk</td><td>02 May 2025</td></tr>
+              <tr><td>Global Metals</td><td><span class="tag low">Low</span></td><td>25/100</td><td>Regulatory Risk</td><td>01 May 2025</td></tr>
+              <tr><td>Sunrise Corp</td><td><span class="tag medium">Medium</span></td><td>55/100</td><td>Financial Risk</td><td>29 Apr 2025</td></tr>
+              <tr><td>Techno Solutions</td><td><span class="tag low">Low</span></td><td>28/100</td><td>Operational Risk</td><td>28 Apr 2025</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <aside class="panel risk-assistant">
+          <div class="assistant-panel">
+            <div class="assistant-header">
+              <div>
+                <h2>AI Risk Assistant</h2>
+                <p>Ask anything about your supplier risks.</p>
+              </div>
+              <div class="assistant-icon">🤖</div>
+            </div>
+            <form id="risk-form" class="assistant-form" enctype="multipart/form-data">
+              <input id="supplier" name="supplier_name" placeholder="Supplier name">
+              <textarea id="query" name="query" rows="4" placeholder="Example: Is ABC Pvt Ltd financially risky?"></textarea>
+              <div class="file-input">
+                <input type="file" name="document" accept=".pdf,.txt">
+              </div>
+              <button type="submit">Analyze Supplier Risk</button>
+            </form>
+          </div>
+          <div id="analysis-result" class="assistant-result" style="display: none;">
+            <h3>Analysis Result</h3>
+            <p class="result-row"><strong>Supplier:</strong> <span id="result-supplier">—</span></p>
+            <p class="result-row"><strong>Risk Category:</strong> <span id="result-risk">—</span></p>
+            <p class="result-row"><strong>Severity:</strong> <span id="result-level">—</span></p>
+            <p class="result-row"><strong>Summary:</strong> <span id="result-summary">—</span></p>
+            <p style="margin: 0 0 6px;">Supporting Evidence:</p>
+            <ul id="result-evidence"></ul>
+          </div>
+          <div style="background: #ffffff; border-radius: 20px; padding: 18px; border: 1px solid #e5e7eb;">
+            <h3 style="margin:0 0 12px;">Recent Activity</h3>
+            <p style="margin:0 0 8px; color:var(--muted);">Document uploaded for ABC Pvt Ltd</p>
+            <p style="margin:0 0 8px; color:var(--muted);">Risk assessment completed for XYZ Industries</p>
+            <p style="margin:0; color:var(--muted);">Report generated for Global Metals</p>
+          </div>
+        </aside>
+      </div>
+
+      <div class="footer">Use the AI Risk Assistant to analyze uploaded supplier documents and generate evidence-backed assessments.</div>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('risk-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const res = await fetch('/analyze', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      document.getElementById('analysis-result').style.display = 'block';
+      document.getElementById('result-supplier').textContent = data.supplier || 'Unknown';
+      document.getElementById('result-risk').textContent = data.risk_category || 'Unknown';
+      document.getElementById('result-level').textContent = data.risk_level || 'Unknown';
+      document.getElementById('result-summary').textContent = data.summary || 'No summary available.';
+
+      const evidenceList = document.getElementById('result-evidence');
+      evidenceList.innerHTML = '';
+      if (data.evidence && data.evidence.length) {
+        data.evidence.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          evidenceList.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No evidence snippets were found.';
+        evidenceList.appendChild(li);
+      }
+    });
+  </script>
+</body>
+</html>

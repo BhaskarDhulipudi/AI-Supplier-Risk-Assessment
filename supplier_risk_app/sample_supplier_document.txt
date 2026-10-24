@@ -1,0 +1,23 @@
+Supplier Name: NovaTech Components
+
+Supplier Profile:
+- Founded in 2019
+- Primary products: electronics assembly and industrial connectors
+- Located in a region with recent political instability
+- 3 late deliveries in the last 6 months
+- Repeated quality defects in delivered products
+- Audit found partial compliance issues in worker safety documentation
+- Management has not resolved corrective actions
+- Several customers reported supply disruption risk
+- No evidence of formal sanctions, but increased operational risk
+- Recommended procurement action: review before renewal
+
+Summary:
+NovaTech Components has shown a pattern of delayed deliveries, quality concerns, and unresolved compliance findings. These issues may affect continuity of supply and increase operational risk for procurement teams. Management has not completed corrective actions and there are signs of weak control monitoring.
+
+Risk Indicators:
+- Supply chain disruption risk
+- Quality control failures
+- Compliance documentation gaps
+- Weak corrective action follow-up
+- Geographic instability risk

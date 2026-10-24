@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Vector Store | Supplier Risk{% endblock %}
+{% block page_title %}Vector Store{% endblock %}
+{% block page_subtitle %}Review embedded document chunks and retrieval data.{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="panel-row">
+    <div>
+      <p class="panel-title">Stored Chunks</p>
+      <p>These are the current vector store entries used for retrieval.</p>
+    </div>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Source</th>
+        <th>Filename</th>
+        <th>Chunk Text</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in store %}
+      <tr>
+        <td>{{ item.source }}</td>
+        <td>{{ item.source_file }}</td>
+        <td style="max-width: 520px; white-space: normal;">{{ item.chunk_text[:120] }}{% if item.chunk_text|length > 120 %}...{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

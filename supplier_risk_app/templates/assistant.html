@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}AI Risk Assistant | Supplier Risk{% endblock %}
+{% block page_title %}AI Risk Assistant{% endblock %}
+{% block page_subtitle %}Assess supplier risk with CSV data and documents. For conversational assessments without an API key, start the configured local Ollama model.{% endblock %}
+{% block content %}
+<div class="section-grid" style="grid-template-columns: 1fr;">
+  <aside class="panel"><div class="assistant-panel">
+    <div class="assistant-header"><div><h2>AI Risk Assistant</h2><p>Select a supplier and ask a supplier-risk question. The app uses a local Ollama model when available; otherwise it provides an offline, rule-based assessment.</p></div><div class="assistant-icon">🤖</div></div>
+    <form id="risk-form" class="assistant-form" enctype="multipart/form-data">
+      <input id="assistant-supplier-id" name="supplier_id" placeholder="Supplier ID (e.g. SUP0001)">
+      <input id="assistant-supplier" name="supplier_name" placeholder="Or supplier name (e.g. Supplier 0001)">
+      <textarea id="assistant-query" name="query" rows="5" placeholder="Example: Should we approve this supplier for a new purchase order? Explain the major risks and evidence."></textarea>
+      <div class="file-wrapper"><label for="assistant-document">Add supplier document (optional)</label><input id="assistant-document" type="file" name="document" accept=".pdf,.txt"></div>
+      <button type="submit">Analyze Supplier Risk</button>
+    </form>
+    <div id="assistant-result" class="assistant-result" style="display:none;">
+      <h3>Integrated Risk Assessment</h3>
+      <p class="result-row"><strong>Supplier:</strong> <span id="assistant-result-supplier">—</span></p>
+      <p class="result-row"><strong>Risk Score:</strong> <span id="assistant-result-score">—</span></p>
+      <p class="result-row"><strong>Risk Level:</strong> <span id="assistant-result-level">—</span></p>
+      <p class="result-row"><strong>Risk Category:</strong> <span id="assistant-result-risk">—</span></p>
+      <p class="result-row"><strong>Procurement Action:</strong> <span id="assistant-result-action">—</span></p>
+      <p class="result-row"><strong>Summary:</strong> <span id="assistant-result-summary">—</span></p>
+      <p style="margin: 10px 0 6px;"><strong>Key Risks</strong></p><ul id="assistant-result-risks"></ul>
+      <p style="margin: 10px 0 6px;"><strong>Evidence</strong></p><ul id="assistant-result-evidence"></ul>
+      <p style="margin: 10px 0 6px;"><strong>Data Sources</strong></p><ul id="assistant-result-sources"></ul>
+    </div>
+  </div></aside>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form=document.getElementById('risk-form'), result=document.getElementById('assistant-result');
+  const setText=(id,v)=>document.getElementById(id).textContent=v??'—';
+  const fillList=(id,items)=>{const el=document.getElementById(id);el.innerHTML='';(Array.isArray(items)?items:[]).forEach(x=>{const li=document.createElement('li');li.textContent=typeof x==='string'?x:JSON.stringify(x);el.appendChild(li)});if(!el.children.length){const li=document.createElement('li');li.textContent='None available.';el.appendChild(li)}};
+  form.addEventListener('submit',async e=>{e.preventDefault();result.style.display='block';setText('assistant-result-summary','Checking supplier data, documents, and local AI...');['assistant-result-supplier','assistant-result-score','assistant-result-level','assistant-result-risk','assistant-result-action'].forEach(id=>setText(id,'Analyzing...'));try{const res=await fetch('/analyze',{method:'POST',body:new FormData(form)}),data=await res.json();if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`);setText('assistant-result-supplier',data.supplier);setText('assistant-result-score',data.risk_score);setText('assistant-result-level',data.risk_level);setText('assistant-result-risk',data.risk_category);setText('assistant-result-action',data.procurement_action);setText('assistant-result-summary',data.summary);fillList('assistant-result-risks',data.key_risks);fillList('assistant-result-evidence',data.evidence);fillList('assistant-result-sources',data.data_sources)}catch(err){['assistant-result-supplier','assistant-result-score','assistant-result-level','assistant-result-risk','assistant-result-action'].forEach(id=>setText(id,'—'));['assistant-result-risks','assistant-result-evidence','assistant-result-sources'].forEach(id=>fillList(id,[]));setText('assistant-result-summary',err.message)}});
+});
+</script>
+{% endblock %}

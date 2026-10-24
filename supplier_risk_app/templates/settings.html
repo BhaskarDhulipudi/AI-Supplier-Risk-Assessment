@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Settings | Supplier Risk{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Review the active AI provider, manage application users, and inspect indexed documents.{% endblock %}
+{% block content %}
+{% if error %}
+<p role="alert" style="color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:12px;">{{ error }}</p>
+{% endif %}
+{% if message %}
+<p role="status" style="color:#166534; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:12px;">{{ message }}</p>
+{% endif %}
+<div class="settings-grid">
+  <div class="settings-card">
+    <h3>Notifications</h3>
+    <p style="color:#64748b;">Email or alert notifications are not configured in this application.</p>
+  </div>
+  <div class="settings-card">
+    <h3>AI Provider</h3>
+    {% if openai_enabled %}
+      <p style="color:#166534;">OpenAI is configured. Assistant requests use the OpenAI provider.</p>
+    {% else %}
+      <p style="color:#334155;">OpenAI API key: Not configured</p>
+      <p style="color:#334155;">Local Ollama model: {{ ollama_model }}</p>
+    {% endif %}
+    <p style="color:#64748b;">Ollama and model settings are read from the application environment.</p>
+  </div>
+  <div class="settings-card">
+    <h3>Document Indexing</h3>
+    <p style="color:#64748b;">Add uploaded PDF and TXT files to the local document index.</p>
+    {% if is_admin %}
+      <form method="post" action="/ingest-existing-uploads">
+        <button class="button primary" type="submit" style="width:100%; margin-top: 10px;">Ingest Existing Uploads</button>
+      </form>
+      <p style="color:#475569; margin-top: 12px;">Ingests all existing files in the uploads folder into the vector store.</p>
+    {% else %}
+      <p style="color:#334155; font-weight:600;">Only admin can ingest existing uploaded documents.</p>
+    {% endif %}
+  </div>
+  <div class="settings-card">
+    <h3>Manage Users</h3>
+    <p style="color:#64748b; margin-bottom: 18px;">Add or remove users with access to the application.</p>
+    {% if is_admin %}
+      <form method="post">
+        <label for="new-username" style="display:block; margin-bottom:8px; font-weight:700; color:#0f172a;">New Username</label>
+        <input id="new-username" type="text" name="new_username" placeholder="Enter new username" required autocomplete="off" style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:12px;">
+        <label for="new-password" style="display:block; margin-bottom:8px; font-weight:700; color:#0f172a;">New Password</label>
+        <input id="new-password" type="password" name="new_password" placeholder="Enter new password" required autocomplete="new-password" style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:16px;">
+        <button type="submit" class="button primary" style="width:100%;">Add User</button>
+      </form>
+    {% else %}
+      <p style="color:#334155; font-weight:600;">Only admin users can add or manage login credentials.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="settings-card" style="grid-column: 1 / -1;">
+  <h3>Vector Store</h3>
+  <p style="color:#64748b; margin-bottom: 16px;">View current vector store size and indexed document sources.</p>
+  <p><strong>Total chunks:</strong> {{ vector_metadata.total_chunks }}</p>
+  <p><strong>Sources:</strong></p>
+  <ul style="margin-top: 8px; color:#334155;">
+    {% for source, count in vector_metadata.source_counts %}
+      <li>{{ source }} — {{ count }} chunks</li>
+    {% else %}
+      <li>No documents have been indexed yet.</li>
+    {% endfor %}
+  </ul>
+  <a href="/vector-store" class="button secondary" style="margin-top: 16px; display: inline-flex;">View Vector Store</a>
+</div>
+
+<div class="settings-card" style="grid-column: 1 / -1;">
+  <h3>Existing Users</h3>
+  {% if is_admin %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for username in users.keys() %}
+        <tr>
+          <td>{{ username }}</td>
+          <td>Active</td>
+          <td>
+            {% if username != 'admin' %}
+            <form method="post" style="margin:0; display:inline;">
+              <input type="hidden" name="delete_username" value="{{ username }}">
+              <button type="submit" class="button secondary" style="padding:8px 12px; font-size:0.9rem;">Delete</button>
+            </form>
+            {% else %}
+            <span style="color:#94a3b8;">No actions</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#334155; font-weight:600;">Only admin can view existing users.</p>
+  {% endif %}
+</div>
+{% endblock %}

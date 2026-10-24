@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Supplier Risk Assessment{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #0f172a;
+      --surface-card: #111827;
+      --surface-alt: #0f172a;
+      --surface-light: #1f2937;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #6366f1;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border: #334155;
+      --shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
+      font-size: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #e2e8f0; color: #111827; }
+    .app-shell { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+    .sidebar { background: #020617; color: var(--text); padding: 28px 22px; display: flex; flex-direction: column; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(135deg, #6366f1, #7c3aed); display: grid; place-items: center; font-weight: 700; color: white; }
+    .brand-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.02em; margin: 0; }
+    .brand-subtitle { font-size: 0.86rem; color: #94a3b8; margin: 0; }
+    .nav-links { display: grid; gap: 10px; margin-top: 8px; }
+    .nav-link { display: flex; align-items: center; padding: 14px 18px; border-radius: 18px; text-decoration: none; color: #cbd5e1; font-weight: 500; transition: background 0.2s ease, color 0.2s ease; }
+    .nav-link:hover { background: rgba(99, 102, 241, 0.16); color: white; }
+    .nav-link.active { background: rgba(99, 102, 241, 0.24); color: white; }
+    .nav-link span { flex: 1; }
+    .sidebar-footer { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-user { font-size: 0.95rem; margin: 0; }
+    .sidebar-email { font-size: 0.82rem; margin: 6px 0 0; color: #94a3b8; }
+    .main { padding: 28px 32px; background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%); }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 24px; }
+    .page-title { margin: 0; font-size: 2rem; font-weight: 800; color: #111827; }
+    .page-subtitle { margin: 8px 0 0; color: #475569; }
+    .searchbar { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #cbd5e1; border-radius: 18px; padding: 14px 18px; min-width: 320px; }
+    .searchbar input { border: none; outline: none; width: 100%; font-size: 0.95rem; color: #0f172a; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .stat-card { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-radius: 24px; padding: 22px; box-shadow: 0 18px 35px rgba(15, 23, 42, 0.06); border: 1px solid #e2e8f0; }
+    .stat-card h3 { margin: 0 0 10px; font-size: 0.92rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .stat-value { font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; color: #0f172a; }
+    .stat-card .stat-meta { color: #16a34a; font-size: 0.9rem; }
+    .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+    .panel { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-radius: 30px; padding: 26px; box-shadow: 0 18px 35px rgba(15, 23, 42, 0.06); border: 1px solid #e2e8f0; }
+    .panel h2 { margin-top: 0; font-size: 1.15rem; }
+    .panel-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .panel-row .panel-title { margin: 0; font-size: 1.1rem; font-weight: 700; }
+    .panel-row p { margin: 0; color: #64748b; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { text-align: left; padding: 15px 12px; border-bottom: 1px solid #e2e8f0; }
+    .table th { color: #64748b; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    .table td { color: #0f172a; }
+    .table tbody tr { transition: background 0.2s ease; }
+    .table tbody tr:hover { background: rgba(99, 102, 241, 0.03); }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .tag { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; }
+    .tag.high { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+    .tag.medium { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+    .tag.low { background: rgba(16, 185, 129, 0.12); color: #047857; }
+    .button { display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 18px; padding: 14px 20px; font-weight: 700; cursor: pointer; }
+    .button.primary { background: #6366f1; color: white; }
+    .button.secondary { background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; }
+    .button.small { padding: 10px 16px; font-size: 0.95rem; }
+    .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 24px; margin-bottom: 24px; }
+    .chart-card { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-radius: 24px; padding: 22px; box-shadow: 0 18px 35px rgba(15, 23, 42, 0.06); border: 1px solid #e2e8f0; }
+    .chart-card h3 { margin: 0 0 12px; font-size: 1rem; color: #0f172a; }
+    .chart-body { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .donut { width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#dc2626 0 21%, #f59e0b 21% 57%, #16a34a 57% 100%); display: grid; place-items: center; color: white; font-weight: 700; box-shadow: inset 0 0 0 10px rgba(255,255,255,0.12); }
+    .legend { display: grid; gap: 10px; width: min(100%, 220px); }
+    .legend-item { display: flex; justify-content: space-between; gap: 8px; font-size: 0.95rem; color: #334155; }
+    .legend-item strong { color: #0f172a; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+    .trend-chart { min-height: 192px; border-radius: 20px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(59, 130, 246, 0.05)); display: grid; place-items: center; color: #334155; font-weight: 700; text-align: center; padding: 18px; }
+    .assistant-panel { display: grid; gap: 18px; }
+    .assistant-header { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .assistant-header h2 { margin: 0; font-size: 1.35rem; }
+    .assistant-header p { margin: 6px 0 0; color: #64748b; }
+    .assistant-icon { width: 50px; height: 50px; border-radius: 18px; display: grid; place-items: center; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 1.5rem; }
+    .assistant-form { display: grid; gap: 16px; }
+    .assistant-form input,
+    .assistant-form textarea,
+    .assistant-form .file-wrapper { width: 100%; border-radius: 18px; font-size: 1rem; }
+    .assistant-form input { height: 52px; padding: 16px 18px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; }
+    .assistant-form textarea { min-height: 140px; padding: 18px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; resize: vertical; }
+    .assistant-form .file-wrapper { padding: 16px 18px; background: white; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .assistant-form .file-wrapper input[type=file] { width: auto; }
+    .assistant-form button { width: 100%; background: #6366f1; color: white; padding: 16px; border-radius: 18px; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.16); }
+    .assistant-form button:hover { opacity: 0.98; }
+    .assistant-result { display: grid; gap: 12px; }
+    .assistant-result h3 { margin: 0; }
+    .assistant-result .result-row { font-size: 0.95rem; color: #334155; }
+    .assistant-result .result-row strong { color: #0f172a; }
+    .assistant-result ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .assistant-result li { background: #f8fafc; padding: 14px; border-radius: 16px; border: 1px solid #e2e8f0; color: #334155; }
+    .footer { margin-top: 28px; color: #64748b; font-size: 0.93rem; }
+    .upload-area { display: grid; gap: 18px; }
+    .upload-card { background: white; border-radius: 24px; border: 1px solid #e2e8f0; padding: 22px; box-shadow: var(--shadow); }
+    .upload-card h3 { margin-top: 0; }
+    .input-card { width: 100%; padding: 18px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 18px; }
+    .settings-grid { display: grid; gap: 18px; }
+    .settings-card { background: white; border-radius: 24px; border: 1px solid #e2e8f0; padding: 22px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">AI</div>
+        <div>
+          <p class="brand-title">Supplier Risk</p>
+          <p class="brand-subtitle">Assessment</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"><span>Dashboard</span></a>
+        <a href="/upload" class="nav-link {% if active_page == 'upload' %}active{% endif %}"><span>Upload Documents</span></a>
+        <a href="/suppliers" class="nav-link {% if active_page == 'suppliers' %}active{% endif %}"><span>Suppliers</span></a>
+        <a href="/assistant" class="nav-link {% if active_page == 'assistant' %}active{% endif %}"><span>AI Risk Assistant</span></a>
+        <a href="/reports" class="nav-link {% if active_page == 'reports' %}active{% endif %}"><span>Reports</span></a>
+        <a href="/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}"><span>Settings</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <p class="sidebar-user">{{ current_user or 'Guest' }}</p>
+        <p class="sidebar-email">{% if current_user %}Logged in as {{ current_user }}{% else %}Not signed in{% endif %}</p>
+        <a href="/logout" class="nav-link" style="margin-top: 16px; background: rgba(239, 68, 68, 0.12); color: #f8fafc;">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="page-subtitle">{% block page_subtitle %}Welcome back, Admin! Here’s what’s happening today.{% endblock %}</p>
+        </div>
+        <div class="searchbar">
+          <span>🔍</span>
+          <input type="search" placeholder="Search suppliers...">
+        </div>
+      </div>
+
+      {% block content %}{% endblock %}
+      <div class="footer">Review supplier performance, monitor risk levels, and manage procurement decisions from one place.</div>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | Supplier Risk Assessment</title>
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef2ff; color: #0f172a; display: grid; place-items: center; min-height: 100vh; }
+    .login-card { width: min(420px, 92vw); background: white; border-radius: 32px; padding: 36px; box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12); }
+    .login-card h1 { margin: 0 0 10px; font-size: 2rem; }
+    .login-card p { margin: 0 0 24px; color: #475569; }
+    .login-card label { display: block; margin-bottom: 10px; font-weight: 700; }
+    .login-card input { width: 100%; padding: 16px 18px; margin-bottom: 18px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 1rem; }
+    .login-card button { width: 100%; padding: 16px; border: none; border-radius: 18px; background: #6366f1; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .error { margin: 0 0 16px; color: #b91c1c; font-weight: 600; }
+    .footer { margin-top: 16px; color: #64748b; font-size: 0.95rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>Welcome back</h1>
+    <p>Sign in to continue to the supplier risk dashboard.</p>
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+    <form method="post">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" placeholder="Enter username" autocomplete="username">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" placeholder="Enter password" autocomplete="current-password">
+      <button type="submit">Sign in</button>
+    </form>
+    <p class="footer">Sign in with an account provided by your administrator.</p>
+  </div>
+</body>
+</html>
